@@ -16,6 +16,7 @@ WiFiUDP udp;
 
 static double nivel_tinta_atual = 100.0;
 static double nivel_bateria = 100.0;
+static int contador_bateria = 0;
 
 struct Date {
     
@@ -175,26 +176,44 @@ void loop() {
                 StaticJsonDocument<256> json;
                 Date date = getDate();                          
                 
-                int tinta = json["tinta"]["nivel_tinta"] = nivel_tinta();
-                int bateria = json["bateria"]["nivel_bateria"] = nivel_bateria;
+                String tinta = json["tinta"]["nivel_tinta"] = nivel_tinta();
+                String bateria = json["bateria"]["nivel_bateria"] = nivel_bateria;
                 String dia = json["data"] = dataMonitoramento(date);
                 String hora = json["hora"] = horaMonitoramento(date);
-                String latitude = json["gps"]["latitude"] = "-15.98930198";
-                String longitude = json["gps"]["longitude"] = "-48.0446291";
+                String latitude_inicial = json["gps"]["latitude_inicial"] = "-15.98930198";
+                String longitude_inicial = json["gps"]["longitude_inicial"] = "-48.0446291";
+                String latitude_final = json["gps"]["latitude_final"] = "-15.99231874";
+                String longitude_final = json["gps"]["latitude_final"] = "-48.04943562";
                 String status_carrinho = json["status"] = "true";
             
                 serializeJson(json, dados);
                 Serial.println(dados);
          
-                HTTPClient httpPost;    
-             
-                httpPost.begin("https://www.jsonstore.io/35f4a0df33c19d622f160fc925184e211dc5feb1ba7d2df01faa9e7fb630455b");      
-                httpPost.addHeader("Content-Type", "application/json");  
-             
-                int httpCode = httpPost.POST(dados);   
-             
-                httpPost.end();
-                delay(15000); 
+                HTTPClient httpPost;
+                contador_bateria += 1;
+
+                if(contador_bateria == 8) {
+
+                    httpPost.begin("https://www.jsonstore.io/35f4a0df33c19d622f160fc925184e211dc5feb1ba7d2df01faa9e7fb630455b");      
+                    httpPost.addHeader("Content-Type", "application/json");  
+
+                    nivel_bateria -=20;
+                    int bateria = json["bateria"]["nivel_bateria"] = nivel_bateria;
+                    int httpCode = httpPost.POST(dados);   
+                 
+                    httpPost.end();
+                    delay(15000);
+                    contador_bateria = 0; 
+                } else {
+
+                    httpPost.begin("https://www.jsonstore.io/35f4a0df33c19d622f160fc925184e211dc5feb1ba7d2df01faa9e7fb630455b");      
+                    httpPost.addHeader("Content-Type", "application/json");  
+
+                    int httpCode = httpPost.POST(dados);   
+                 
+                    httpPost.end();
+                    delay(15000); 
+                }  
             } else {
 
                 digitalWrite(RELE, LOW);
@@ -206,8 +225,10 @@ void loop() {
                 int bateria = json["bateria"]["nivel_bateria"] = "";
                 String dia = json["data"] = "";
                 String hora = json["hora"] = "";
-                String latitude = json["gps"]["latitude"] = "";
-                String longitude = json["gps"]["longitude"] = "";
+                String latitude_inicial = json["gps"]["latitude_inicial"] = "";
+                String longitude_inicial = json["gps"]["longitude_inicial"] = "";
+                String latitude_final = json["gps"]["latitude_final"] = "";
+                String longitude_final = json["gps"]["longitude_final"] = "";
                 String status_carrinho = json["status"] = "false";
             
                 serializeJson(json, dados);
@@ -224,7 +245,6 @@ void loop() {
                 delay(2000); 
             }
         }
-     
         else {
             Serial.println("WiFi Desconectada");
         }
