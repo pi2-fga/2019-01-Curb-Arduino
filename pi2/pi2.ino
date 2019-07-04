@@ -107,7 +107,7 @@ int nivel_tinta() {
 
 void setup() {
 
-  Serial.begin(115200);
+    Serial.begin(115200);
     
     Serial.println();
     Serial.println();
@@ -175,15 +175,16 @@ void loop() {
                 String dados;                
                 StaticJsonDocument<256> json;
                 Date date = getDate();                          
-                
-                String tinta = json["tinta"]["nivel_tinta"] = nivel_tinta();
-                String bateria = json["bateria"]["nivel_bateria"] = nivel_bateria;
+
+                String id = json["curbAtivo"] = "1"; 
+                String tinta = json["tinta"] = nivel_tinta();
+                String bateria = json["bateria"] = nivel_bateria;
                 String dia = json["data"] = dataMonitoramento(date);
                 String hora = json["hora"] = horaMonitoramento(date);
-                String latitude_inicial = json["gps"]["latitude_inicial"] = "-15.98930198";
-                String longitude_inicial = json["gps"]["longitude_inicial"] = "-48.0446291";
-                String latitude_final = json["gps"]["latitude_final"] = "-15.99231874";
-                String longitude_final = json["gps"]["latitude_final"] = "-48.04943562";
+                String latitude_inicial = json["latitudeInicial"] = "-15.98930198";
+                String longitude_inicial = json["logitudeInicial"] = "-48.0446291";
+                String latitude_final = json["latitudeFinal"] = "-15.99231874";
+                String longitude_final = json["logitudeFinal"] = "-48.04943562";
                 String status_carrinho = json["status"] = "true";
             
                 serializeJson(json, dados);
@@ -194,11 +195,11 @@ void loop() {
 
                 if(contador_bateria == 8) {
 
-                    httpPost.begin("https://www.jsonstore.io/35f4a0df33c19d622f160fc925184e211dc5feb1ba7d2df01faa9e7fb630455b");      
+                    httpPost.begin("http://gustavo2795.pythonanywhere.com/monitoramentos/");      
                     httpPost.addHeader("Content-Type", "application/json");  
 
                     nivel_bateria -=20;
-                    int bateria = json["bateria"]["nivel_bateria"] = nivel_bateria;
+                    int bateria = json["bateria"] = nivel_bateria;
                     int httpCode = httpPost.POST(dados);   
                  
                     httpPost.end();
@@ -206,7 +207,7 @@ void loop() {
                     contador_bateria = 0; 
                 } else {
 
-                    httpPost.begin("https://www.jsonstore.io/35f4a0df33c19d622f160fc925184e211dc5feb1ba7d2df01faa9e7fb630455b");      
+                    httpPost.begin("http://gustavo2795.pythonanywhere.com/monitoramentos/");      
                     httpPost.addHeader("Content-Type", "application/json");  
 
                     int httpCode = httpPost.POST(dados);   
@@ -221,14 +222,15 @@ void loop() {
                 String dados;                
                 StaticJsonDocument<256> json;
         
-                int tinta = json["tinta"]["nivel_tinta"] = "";
-                int bateria = json["bateria"]["nivel_bateria"] = "";
+                String id = json["curbAtivo"] = "0"; 
+                String tinta = json["tinta"] = "";
+                String bateria = json["bateria"] = "";
                 String dia = json["data"] = "";
                 String hora = json["hora"] = "";
-                String latitude_inicial = json["gps"]["latitude_inicial"] = "";
-                String longitude_inicial = json["gps"]["longitude_inicial"] = "";
-                String latitude_final = json["gps"]["latitude_final"] = "";
-                String longitude_final = json["gps"]["longitude_final"] = "";
+                String latitude_inicial = json["latitudeInicial"] = "";
+                String longitude_inicial = json["logitudeInicial"] = "";
+                String latitude_final = json["latitudeFinal"] = "";
+                String longitude_final = json["logitudeFinal"] = "";
                 String status_carrinho = json["status"] = "false";
             
                 serializeJson(json, dados);
@@ -236,7 +238,7 @@ void loop() {
          
                 HTTPClient httpPost;    
              
-                httpPost.begin("https://www.jsonstore.io/35f4a0df33c19d622f160fc925184e211dc5feb1ba7d2df01faa9e7fb630455b");      
+                httpPost.begin("http://gustavo2795.pythonanywhere.com/monitoramentos/");      
                 httpPost.addHeader("Content-Type", "application/json");  
              
                 int httpCode = httpPost.POST(dados);   
