@@ -9,8 +9,8 @@ const int NIVEL_2 = 22;
 const int NIVEL_3 = 23;
 const int RELE = 16;
 const int TIMEZONE = -3;
-const char* ssid = "MrVictor";
-const char* password = "2334445555";
+const char* ssid = "MrVictor42";
+const char* password = "bgatahkei42";
 
 WiFiUDP udp;
 
@@ -99,7 +99,7 @@ int nivel_tinta() {
         nivel_atual_tinta = 63;
     } else if(nivel_1 == 1 && nivel_2 == 1 && nivel_3 == 1) {
       
-        nivel_atual_tinta = 100;
+        nivel_atual_tinta = 80;
     }
 
    return nivel_atual_tinta;
@@ -117,7 +117,8 @@ void setup() {
     WiFi.begin(ssid, password);
 
     while (WiFi.status() != WL_CONNECTED) {
-        delay(500);
+        
+        vTaskDelay(500);
         Serial.print(".");
     }
 
@@ -132,7 +133,7 @@ void setup() {
 
         Serial.println(".");
         ntpClient.forceUpdate();
-        delay(500);
+        vTaskDelay(500);
     }
 
     pinMode(NIVEL_1 , INPUT);
@@ -166,7 +167,6 @@ void loop() {
             }
 
             status_curb = json["result"]["status_carrinho"].as<int>();
-            Serial.println(status_curb);
 
             if(status_curb == 1) {
 
@@ -174,18 +174,19 @@ void loop() {
 
                 String dados;                
                 StaticJsonDocument<256> json;
-                Date date = getDate();                          
+                JsonObject monitoring = json.to<JsonObject>();
+                Date date = getDate();   
 
-                String id = json["curbAtivo"] = "1"; 
-                String tinta = json["tinta"] = nivel_tinta();
-                String bateria = json["bateria"] = nivel_bateria;
-                String dia = json["data"] = dataMonitoramento(date);
-                String hora = json["hora"] = horaMonitoramento(date);
-                String latitude_inicial = json["latitudeInicial"] = "-15.98930198";
-                String longitude_inicial = json["logitudeInicial"] = "-48.0446291";
-                String latitude_final = json["latitudeFinal"] = "-15.99231874";
-                String longitude_final = json["logitudeFinal"] = "-48.04943562";
-                String status_carrinho = json["status"] = "true";
+                monitoring["curbAtivo"] = "1";
+                monitoring["tinta"] = nivel_tinta();
+                monitoring["bateria"] = nivel_bateria;
+                monitoring["data"] = dataMonitoramento(date);
+                monitoring["hora"] = horaMonitoramento(date);
+                monitoring["latitudeInicial"] = "-15.989832";
+                monitoring["logitudeInicial"] = "-48.046540";
+                monitoring["latitudeFinal"] = "-15.989814";
+                monitoring["logitudeFinal"] = "-48.046495";
+                monitoring["status"] = "true";
             
                 serializeJson(json, dados);
                 Serial.println(dados);
@@ -193,17 +194,17 @@ void loop() {
                 HTTPClient httpPost;
                 contador_bateria += 1;
 
-                if(contador_bateria == 8) {
+                if(contador_bateria == 2) {
 
                     httpPost.begin("http://gustavo2795.pythonanywhere.com/monitoramentos/");      
                     httpPost.addHeader("Content-Type", "application/json");  
 
                     nivel_bateria -=20;
-                    int bateria = json["bateria"] = nivel_bateria;
+                    monitoring["bateria"] = nivel_bateria;
                     int httpCode = httpPost.POST(dados);   
                  
                     httpPost.end();
-                    delay(15000);
+                    vTaskDelay(15000);
                     contador_bateria = 0; 
                 } else {
 
@@ -213,7 +214,7 @@ void loop() {
                     int httpCode = httpPost.POST(dados);   
                  
                     httpPost.end();
-                    delay(15000); 
+                    vTaskDelay(15000); 
                 }  
             } else {
 
@@ -221,17 +222,18 @@ void loop() {
 
                 String dados;                
                 StaticJsonDocument<256> json;
+                JsonObject monitoring = json.to<JsonObject>();
         
-                String id = json["curbAtivo"] = "0"; 
-                String tinta = json["tinta"] = "";
-                String bateria = json["bateria"] = "";
-                String dia = json["data"] = "";
-                String hora = json["hora"] = "";
-                String latitude_inicial = json["latitudeInicial"] = "";
-                String longitude_inicial = json["logitudeInicial"] = "";
-                String latitude_final = json["latitudeFinal"] = "";
-                String longitude_final = json["logitudeFinal"] = "";
-                String status_carrinho = json["status"] = "false";
+                monitoring["curbAtivo"] = "0";
+                monitoring["tinta"] = "";
+                monitoring["bateria"] = "";
+                monitoring["data"] = "";
+                monitoring["hora"] = "";
+                monitoring["latitudeInicial"] = "";
+                monitoring["logitudeInicial"] = "";
+                monitoring["latitudeFinal"] = "";
+                monitoring["logitudeFinal"] = "";
+                monitoring["status"] = "false";
             
                 serializeJson(json, dados);
                 Serial.println(dados);
@@ -244,7 +246,7 @@ void loop() {
                 int httpCode = httpPost.POST(dados);   
              
                 httpPost.end();
-                delay(2000); 
+                vTaskDelay(2000); 
             }
         }
         else {
@@ -254,5 +256,5 @@ void loop() {
         httpGet.end(); 
     }
      
-    delay(1000);
+    vTaskDelay(1000);
 }
