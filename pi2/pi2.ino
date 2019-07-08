@@ -5,15 +5,16 @@
 #include <NTPClient.h>
 #include <dummy.h>
 
-const uint8_t TRIG_PIN = 22;
-const uint8_t ECHO_PIN = 23;
+const uint8_t TRIG1_PIN = 22;
+const uint8_t ECHO1_PIN = 23;
+const uint8_t TRIG2_PIN = 13;
+const uint8_t ECHO2_PIN = 12;
 uint32_t print_timer;
 
 const int NIVEL_1 = 32;
 const int NIVEL_2 = 35;
 const int NIVEL_3 = 34;
 
-const int RELESOFTWARE = 16;
 const int RELE1 = 14;
 const int RELE2 = 27;
 const int RELE3 = 26;
@@ -89,23 +90,17 @@ String horaMonitoramento(Date date) {
 }
 
 void distancia_ultrassom(const uint8_t trig, const uint8_t echo) {
-    // Espera 0,5s (500ms) entre medições.
+    
     if (millis() - print_timer > 500) {
+      
       print_timer = millis();
   
-      // Pulso de 5V por pelo menos 10us para iniciar medição.
-      digitalWrite(TRIG_PIN, HIGH);
+      digitalWrite(trig, HIGH);
       delayMicroseconds(11);
-      digitalWrite(TRIG_PIN, LOW);
+      digitalWrite(trig, LOW);
   
-      /* Mede quanto tempo o pino de echo ficou no estado alto, ou seja,
-        o tempo de propagação da onda. */
-      uint32_t pulse_time = pulseIn(ECHO_PIN, HIGH);
-  
-      /* A distância entre o sensor ultrassom e o objeto será proporcional a velocidade
-        do som no meio e a metade do tempo de propagação. Para o ar na
-        temperatura ambiente Vsom = 0,0343 cm/us. */
-      //pode ser double distance tbm, mas nao ha a necessidade para este projeto
+      uint32_t pulse_time = pulseIn(echo, HIGH);
+
       int distance = 0.01715 * pulse_time;
       Serial.print(distance);
       Serial.println(" cm");  
@@ -174,21 +169,22 @@ void setup() {
     pinMode(NIVEL_1 , INPUT);
     pinMode(NIVEL_2 , INPUT);
     pinMode(NIVEL_3 , INPUT);
-    pinMode(RELESOFTWARE, OUTPUT);
+   
     pinMode(RELE1, OUTPUT);
     pinMode(RELE2, OUTPUT);
     pinMode(RELE3, OUTPUT);
     pinMode(RELE4, OUTPUT);
     pinMode(RELE5, OUTPUT);
-    pinMode(TRIG_PIN, OUTPUT);
-    pinMode(ECHO_PIN, INPUT);
+    pinMode(TRIG1_PIN, OUTPUT);
+    pinMode(ECHO1_PIN, INPUT);
 
     digitalWrite(RELE1, HIGH);
     digitalWrite(RELE2, HIGH);
     digitalWrite(RELE3, HIGH);
     digitalWrite(RELE4, HIGH);
     digitalWrite(RELE5, HIGH);
-    digitalWrite(TRIG_PIN, HIGH);
+    digitalWrite(TRIG1_PIN, LOW);
+    digitalWrite(TRIG2_PIN, LOW);
 }
 
 void loop() {
@@ -200,6 +196,7 @@ void loop() {
         int status_compressor1 = 0;
         int status_compressor2 = 0;
         int ligar = 1;
+        int tinta = 0;
         
         HTTPClient httpGet;
         HTTPClient httpMisturador;
@@ -315,7 +312,19 @@ void loop() {
 
             status_curb = json["result"]["status_carrinho"].as<int>();
 
-            if(ligar == 1) {
+            tinta = nivel_tinta();
+
+            if(tinta == 0) {
+
+                digitalWrite(RELE3, HIGH);
+                digitalWrite(RELE5, HIGH);
+                vTaskDelay(2000);
+                digitalWrite(RELE1, HIGH);
+                digitalWrite(RELE2, HIGH);
+                digitalWrite(RELE4, HIGH);
+            }
+
+            if(ligar == 1 && tinta != 0) {
 
                 digitalWrite(RELE3, LOW);
                 vTaskDelay(2000);
@@ -348,8 +357,9 @@ void loop() {
                 HTTPClient httpPost;
                 contador_bateria += 1;
 
-                distancia_ultrassom(TRIG_PIN, ECHO_PIN);
-
+                distancia_ultrassom(TRIG1_PIN, ECHO1_PIN);
+                distancia_ultrassom(TRIG2_PIN, ECHO2_PIN);
+                
                 if(contador_bateria == 2) {
 
                     httpPost.begin("http://gustavo2795.pythonanywhere.com/monitoramentos/");      
