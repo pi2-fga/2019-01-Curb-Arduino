@@ -21,9 +21,14 @@ const int RELE3 = 26;
 const int RELE4 = 25;
 const int RELE5 = 33;
 
+const int PWMPONTE1 = 21; 
+const int PWMPONTE2 = 18; 
+const int DIRPONTE1 = 19; 
+const int DIRPONTE2 = 5; 
+
 const int TIMEZONE = -3;
-const char* ssid = "ASUS_Abraao";
-const char* password = "capiroto";
+const char* ssid = "MrVictor42";
+const char* password = "bgatahkei42";
 
 WiFiUDP udp;
 
@@ -89,7 +94,7 @@ String horaMonitoramento(Date date) {
     return horario;
 }
 
-void distancia_ultrassom(const uint8_t trig, const uint8_t echo) {
+int distancia_ultrassom(const uint8_t trig, const uint8_t echo) {
     
     if (millis() - print_timer > 500) {
       
@@ -102,8 +107,37 @@ void distancia_ultrassom(const uint8_t trig, const uint8_t echo) {
       uint32_t pulse_time = pulseIn(echo, HIGH);
 
       int distance = 0.01715 * pulse_time;
+      return distance;
+      
       Serial.print(distance);
       Serial.println(" cm");  
+    }
+}
+
+void partida() {
+   
+   for (int i = 1; i <= 80; i++){
+        
+        ledcWrite(0,i+1);
+        ledcWrite(1,i);
+        delay(4);
+    }
+}
+
+void desacelera() {
+  
+    for (int i = 128; i >= 0; i--){
+     
+        ledcWrite(0,i);
+        ledcWrite(1,i);
+        delay(6);
+    }
+    
+    for (int i = 0; i <= 128; i++){
+    
+        ledcWrite(1,i);
+        ledcWrite(1,i);
+        delay(6);
     }
 }
 
@@ -178,6 +212,11 @@ void setup() {
     pinMode(TRIG1_PIN, OUTPUT);
     pinMode(ECHO1_PIN, INPUT);
 
+    pinMode(PWMPONTE1, OUTPUT); //LOR
+    pinMode(PWMPONTE2, OUTPUT); //LOR
+    pinMode(DIRPONTE1, OUTPUT); //LOR
+    pinMode(DIRPONTE2, OUTPUT); //LOR
+
     digitalWrite(RELE1, HIGH);
     digitalWrite(RELE2, HIGH);
     digitalWrite(RELE3, HIGH);
@@ -185,6 +224,14 @@ void setup() {
     digitalWrite(RELE5, HIGH);
     digitalWrite(TRIG1_PIN, LOW);
     digitalWrite(TRIG2_PIN, LOW);
+    digitalWrite(DIRPONTE1, LOW); //LOR
+    digitalWrite(DIRPONTE2, LOW); //LOR
+
+    ledcSetup(0, 5000, 8); 
+    ledcSetup(1, 5000, 8); 
+    
+    ledcAttachPin(PWMPONTE1, 0); 
+    ledcAttachPin(PWMPONTE2, 1); 
 }
 
 void loop() {
@@ -195,7 +242,6 @@ void loop() {
         int status_misturador = 0;
         int status_compressor1 = 0;
         int status_compressor2 = 0;
-        int ligar = 1;
         int tinta = 0;
         
         HTTPClient httpGet;
@@ -275,24 +321,24 @@ void loop() {
         if(status_compressor1 == 1) {
 
             digitalWrite(RELE4, LOW);
-            vTaskDelay(2000);
+            vTaskDelay(500);
             digitalWrite(RELE1, LOW); 
         } else {
 
             digitalWrite(RELE1, HIGH);
-            vTaskDelay(2000); 
+            vTaskDelay(500); 
             digitalWrite(RELE4, HIGH);
         }
 
         if (status_compressor2 == 1) {
 
             digitalWrite(RELE4, LOW);
-            vTaskDelay(2000);
+            vTaskDelay(500);
             digitalWrite(RELE2, LOW);   
         } else {
 
             digitalWrite(RELE2, HIGH);
-            vTaskDelay(2000); 
+            vTaskDelay(500); 
             digitalWrite(RELE4, HIGH);
         }
      
@@ -312,27 +358,15 @@ void loop() {
 
             status_curb = json["result"]["status_carrinho"].as<int>();
 
-            tinta = nivel_tinta();
-
-            if(tinta == 0) {
-
-                digitalWrite(RELE3, HIGH);
-                digitalWrite(RELE5, HIGH);
-                vTaskDelay(2000);
-                digitalWrite(RELE1, HIGH);
-                digitalWrite(RELE2, HIGH);
-                digitalWrite(RELE4, HIGH);
-            }
-
-            if(ligar == 1 && tinta != 0) {
+            if(status_curb == 1) {
 
                 digitalWrite(RELE3, LOW);
-                vTaskDelay(2000);
+                vTaskDelay(500);
                 digitalWrite(RELE1, LOW);
                 digitalWrite(RELE2, LOW);
-                vTaskDelay(2000);
+                vTaskDelay(500);
                 digitalWrite(RELE4, LOW);
-                vTaskDelay(2000);
+                vTaskDelay(500);
                 digitalWrite(RELE5, LOW);
                 
                 String dados;                
@@ -356,9 +390,6 @@ void loop() {
          
                 HTTPClient httpPost;
                 contador_bateria += 1;
-
-                distancia_ultrassom(TRIG1_PIN, ECHO1_PIN);
-                distancia_ultrassom(TRIG2_PIN, ECHO2_PIN);
                 
                 if(contador_bateria == 2) {
 
@@ -370,7 +401,7 @@ void loop() {
                     int httpCode = httpPost.POST(dados);   
                  
                     httpPost.end();
-                    vTaskDelay(10000);
+                    vTaskDelay(1000);
                     contador_bateria = 0; 
                 } else {
 
@@ -380,13 +411,13 @@ void loop() {
                     int httpCode = httpPost.POST(dados);   
                  
                     httpPost.end();
-                    vTaskDelay(10000); 
+                    vTaskDelay(1000); 
                 }  
             } else {
 
                 digitalWrite(RELE3, HIGH);
                 digitalWrite(RELE5, HIGH);
-                vTaskDelay(2000);
+                vTaskDelay(500);
                 digitalWrite(RELE1, HIGH);
                 digitalWrite(RELE2, HIGH);
                 digitalWrite(RELE4, HIGH);
@@ -417,7 +448,7 @@ void loop() {
                 int httpCode = httpPost.POST(dados);   
              
                 httpPost.end();
-                vTaskDelay(2000); 
+                vTaskDelay(500); 
             }
         }
         else {
