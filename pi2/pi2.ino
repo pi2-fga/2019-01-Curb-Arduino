@@ -27,8 +27,9 @@ const int DIRPONTE1 = 19;
 const int DIRPONTE2 = 5; 
 
 const int TIMEZONE = -3;
-const char* ssid = "MrVictor42";
-const char* password = "bgatahkei42";
+
+const char* ssid = "";
+const char* password = "";
 
 WiFiUDP udp;
 
@@ -144,12 +145,9 @@ void desacelera() {
 int nivel_tinta() {
 
     int nivel_atual_tinta = 0;
-//    int nivel_1 = digitalRead(NIVEL_1);
-//    int nivel_2 = digitalRead(NIVEL_2);
-//    int nivel_3 = digitalRead(NIVEL_3);
-      int nivel_1 = 1;
-      int nivel_2 = 1;
-      int nivel_3 = 1;
+    int nivel_1 = digitalRead(NIVEL_1);
+    int nivel_2 = digitalRead(NIVEL_2);
+    int nivel_3 = digitalRead(NIVEL_3);
 
 
     if(nivel_1 == 0 && nivel_2 == 0 && nivel_3 == 0) {
